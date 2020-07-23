@@ -9,44 +9,85 @@ const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
+const { create } = require("domain");
+const teamMembers = [];
 
-const questions = [
+const employeeType = [
+    { type: 'list', name: 'employeeType', message: 'What type of employee would you like to add?', choices: ["Engineer","Intern","None"] }
+]
+
+const managerQuestions = [
     { type: 'input', name: 'name', message: 'What is your name?' }, 
     { type: 'input', name: 'email', message: 'What is your email?' }, 
     { type: 'input', name: 'id', message: 'What is your ID?' }, 
-    { type: 'input', name: 'role', message: 'What is your position?' } 
-];
+    { type:'input', name: 'officeNumber', message: 'What is your office number?'}
+]
 
-const initialQuestion = [
-    {type: 'input', name: 'size', message: 'How many employees would you like to add to this team?'}
-];
+const engineerQuestions = [
+    { type: 'input', name: 'name', message: 'What is your name?' }, 
+    { type: 'input', name: 'email', message: 'What is your email?' }, 
+    { type: 'input', name: 'id', message: 'What is your ID?' }, 
+    { type: 'input', name: 'githubUser', message: 'What is your GitHub username?' }
+]
 
-let size = 0;
-inquirer.prompt(initialQuestion)
-    .then((answers) => {
-        size = answers.size
-    }).catch((err) => {
-        console.log(err);
+const internQuestions = [
+    { type: 'input', name: 'name', message: 'What is your name?' }, 
+    { type: 'input', name: 'email', message: 'What is your email?' }, 
+    { type: 'input', name: 'id', message: 'What is your ID?' }, 
+    { type: 'input', name: 'schoolName', message: 'What school do you attend?' }
+]
+
+const createManager = () => {
+    inquirer.prompt(managerQuestions) 
+    .then(response => {
+        const manager = new Manager(response.name, response.email, response.id, response.officeNumber)
+        teamMembers.push(manager)
+        createTeam();
+        //Call create team function
     })
+}
 
-for(let i = 0; i < size; i++) {
-    inquirer
-        .prompt(questions)
-        .then((answers) => {
-            for(let i = 0; i < answers.length; i++) {
-                switch(role) {
-                    case 'Engineer': 
-                        const engineer = new Engineer(name, email, id);
-                    case 'Manager': 
-                        const manager = new Engineer(name, email, id);
-                    case 'Intern':
-                        const intern = new Intern(name, email, id); 
-                }
-            }
-        })
-        .catch((error) => {
-        });
+const createEngineer = () => {
+    inquirer.prompt(engineerQuestions)
+    .then(response => {
+        const engineer = new Engineer(response.name, response.email, response.id, response.githubUser)
+        teamMembers.push(engineer)
+        createTeam();
+    });
+
+}
+const createIntern = () => {
+    inquirer.prompt(internQuestions)
+    .then(response => {
+        const intern = new Intern(response.name, response.email, response.id, response.schoolName)
+        teamMembers.push(intern)
+        createTeam();
+    });
+
+}
+
+function createTeam() {
+    inquirer.prompt(employeeType)
+    .then(response => {
+        switch(response.employeeType) {
+            case "Engineer":
+                createEngineer();
+            case "Intern":
+                createIntern();
+            default:
+                buildTeam();
+        }
+    })
+}
+
+function buildTeam() {
+    if (!fs.existsSync(OUTPUT_DIR)) {
+        fs.mkdirSync(OUTPUT_DIR)
     }
+    fs.writeFileSync(outputPath, render(teamMembers), "utf-8")
+}
+
+createManager();
 
 
 // After the user has input all employees desired, call the `render` function (required
